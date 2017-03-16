@@ -7,6 +7,8 @@
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
+LPWSTR basic_message = TEXT("Done with Pride and Prejudice by Spatari Stanislav");
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR szCmdLine, int iCmdShow) {
 	TCHAR tcAppName[] = TEXT("SampleWindow");
@@ -57,7 +59,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	PAINTSTRUCT ps;
 	RECT rect;
 	HFONT hFont;
-	LPWSTR editMesage = L"Just a simple message";
+	LPWSTR editMessage = L"Just a simple message";
 	switch (message) {
 	case WM_CREATE:
 		static HWND hwndEdit;
@@ -73,7 +75,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			NULL);                                          // pointer not needed 
 		hFont = CreateFont(0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, TEXT("Times New Roman"));
 		SendMessage(hwndEdit, WM_SETFONT, (WPARAM)hFont, 0);
-		SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)editMesage);
+		SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)editMessage);
 
 		static HWND hwndEdit2;
 		hwndEdit2 = CreateWindowEx(
@@ -87,11 +89,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			(HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE),
 			NULL);                                           // pointer not needed 
 	
-		SendMessage(hwndEdit2, WM_SETTEXT, 0, (LPARAM)editMesage);
+		SendMessage(hwndEdit2, WM_SETTEXT, 0, (LPARAM)editMessage);
 
 		static HWND button1 = CreateWindow(
 			TEXT("BUTTON"),  // Predefined class; Unicode assumed 
-			TEXT("Change Window Name"),      // Button text 
+			TEXT("Change Title"),      // Button text 
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
 			10,         // x position 
 			10,         // y position 
@@ -104,7 +106,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		static HWND button2 = CreateWindow(
 			TEXT("BUTTON"),  // Predefined class; Unicode assumed 
-			TEXT("Change Message"),      // Button text 
+			TEXT("Change Basic Message"),      // Button text 
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,  // Styles 
 			10,         // x position 
 			80,         // y position 
@@ -128,7 +130,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
 		GetClientRect(hwnd, &rect);
-		DrawText(hdc, TEXT("Done with Pride and Prejudice by Spatari Stanislav"), -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+		DrawText(hdc, basic_message, -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 		EndPaint(hwnd, &ps);
 		return 0;
 
@@ -156,17 +158,34 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		{
 			SetTextColor(Item->hDC, RGB(255, 0, 0));
 			SelectObject(Item->hDC, CreateSolidBrush(RGB(50, 5, 100)));
-			SelectObject(Item->hDC, CreatePen(PS_SOLID, 2, RGB(255, 255, 1)));
+			SelectObject(Item->hDC, CreatePen(PS_SOLID, 2, RGB(0, 255, 1)));
 
 		}
 		SetBkMode(Item->hDC, TRANSPARENT);
-		RoundRect(Item->hDC, Item->rcItem.left, Item->rcItem.top, Item->rcItem.right, Item->rcItem.bottom, 50, 50);
+		RoundRect(Item->hDC, Item->rcItem.left, Item->rcItem.top, Item->rcItem.right, Item->rcItem.bottom, 0, 0);
 		int len;
 		len = GetWindowTextLength(Item->hwndItem);
 		LPSTR lpBuff;
 		lpBuff = new char[len + 1];
 		GetWindowTextA(Item->hwndItem, lpBuff, len + 1);
 		DrawTextA(Item->hDC, lpBuff, len, &Item->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		return 0;
+
+	case WM_COMMAND:
+		switch (HIWORD(wParam))
+		{
+		case BN_CLICKED:
+			if (GetDlgItem(hwnd, BUTTON_ID1) == (HWND)lParam)
+			{
+				SetWindowText(hwnd, TEXT("This is the new title"));
+			}
+			if (GetDlgItem(hwnd, BUTTON_ID2) == (HWND)lParam)
+			{
+				basic_message = TEXT("This is the new message");
+				InvalidateRect(hwnd, 0, TRUE);
+			}
+			break;
+		}
 		return 0;
 
 	case WM_DESTROY:
