@@ -26,6 +26,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	wndclass.lpszMenuName = NULL;
 	wndclass.lpszClassName = tcAppName;
 
+	srand(time(NULL));
+
 	if (!RegisterClass(&wndclass)) {
 		MessageBox(NULL, TEXT("This program requires Windows NT!"),
 			tcAppName, MB_ICONERROR);
