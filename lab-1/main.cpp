@@ -188,6 +188,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		return 0;
 
+	case WM_SYSCOMMAND:
+		switch (wParam)
+		{
+		case SC_MINIMIZE:
+			if (MessageBox(hwnd, TEXT("Do you want to quit?"), TEXT("Messing your brains"), MB_OKCANCEL) == IDOK)
+			{
+				DestroyWindow(hwnd);
+			}
+			return 0;
+
+		case SC_MAXIMIZE:
+			MoveWindow(hwnd, rand() % GetSystemMetrics(SM_CXSCREEN), rand() % GetSystemMetrics(SM_CYSCREEN), 650, 650, FALSE);
+			ShowWindow(hwnd, SW_SHOW);
+			return 0;
+
+		case SC_CLOSE:
+			MessageBox(hwnd, TEXT("This is not quit button?"), TEXT("ERROR Window"), MB_ICONERROR);
+			return 0;
+		}
+		return DefWindowProc(hwnd, message, wParam, lParam);
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
