@@ -1,5 +1,5 @@
 ﻿#include <windows.h>
-
+#include <time.h>
 #define ID_EDITCHILD 100
 #define ID_EDITCHILD2 101
 #define BUTTON_ID1 102
