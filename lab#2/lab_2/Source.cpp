@@ -6,8 +6,24 @@
 #define IDM_SYS_ABOUT 1
 #define IDM_SYS_HELP 2
 #define IDM_SYS_REMOVE 3
+#define ID_LIST 30
+#define ID_TEXT 40
+
+struct
+{
+	int iStyle;
+	TCHAR * szText;
+}
+button[] =
+{
+	BS_DEFPUSHBUTTON, TEXT("Press Me!"),
+	BS_DEFPUSHBUTTON, TEXT("Change font color"),
+	BS_DEFPUSHBUTTON, TEXT("Change background color"),
+};
+
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+void FillListBox(HWND hwndList);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR szCmdLine, int iCmdShow)
@@ -61,6 +77,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	ShowWindow(hwnd, iCmdShow);
 	UpdateWindow(hwnd);
 
+	//load accelerator table
 	hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
 
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -76,10 +93,51 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static HWND hwndButton[3];
+	static HINSTANCE hInstance;
+	static HWND hwndList, hwndText;
+	static int cxChar, cyChar;
 	RECT rect;
+	int i;
+
+
 
 	switch (message)
 	{
+	case WM_CREATE:
+		GetClientRect(hwnd, &rect);
+		cxChar = LOWORD(GetDialogBaseUnits());
+		cyChar = HIWORD(GetDialogBaseUnits());
+		for (i = 0; i < 3; i++) {
+			hwndButton[i] = CreateWindow(TEXT("button"),
+				button[i].szText,
+				WS_CHILD | WS_VISIBLE | button[i].iStyle,
+				(rect.right - 30 * cxChar) / 2,
+				(rect.bottom / 2) + cyChar * (1 + 3 * i),
+				30 * cxChar,
+				7 * cyChar / 4,
+				hwnd, (HMENU)i,
+				((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		}
+		hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
+		hwndList = CreateWindow(TEXT("listbox"), NULL,
+			WS_CHILD | WS_VISIBLE | LBS_STANDARD,
+			(rect.right - 20 * cxChar) / 2,
+			cyChar * 10,
+			cxChar * 18 + GetSystemMetrics(SM_CXVSCROLL),
+			cyChar * 10,
+			hwnd, (HMENU)ID_LIST,
+			(HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE),
+			NULL);
+		hwndText = CreateWindow(TEXT("static"), NULL,
+			WS_CHILD | WS_VISIBLE | SS_LEFT,
+			cxChar, cyChar,
+			GetSystemMetrics(SM_CXSCREEN), cyChar,
+			hwnd, (HMENU)ID_TEXT,
+			(HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE),
+			NULL);
+		FillListBox(hwndList);
+		return 0;
 	case WM_SYSCOMMAND:   //system menu 
 		switch (LOWORD(wParam)) {
 		case IDM_SYS_ABOUT:              
@@ -91,7 +149,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				TEXT("\nHelp cannot be provided :D"), TEXT("LAB2"), MB_OK | MB_ICONEXCLAMATION);
 			return 0;
 		case IDM_SYS_REMOVE:            
-			GetSystemMenu(hwnd, TRUE);           
+			GetSystemMenu(hwnd, TRUE); // this will remove the added submenus from system menus      
 			return 0;
 		}      
 		break; //break needed in order to pass the obtained default case to DefWindowProc
@@ -100,4 +158,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+void FillListBox(HWND hwndList)
+{
+	int i;
+	TCHAR str[256];
+	for (i = 0; i < 15; ++i)
+	{
+		sprintf_s(str, "List Element #%d", i + 1);
+		SendMessage(hwndList, LB_INSERTSTRING, i, (LPARAM)str);
+	}
 }
