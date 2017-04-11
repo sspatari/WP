@@ -24,6 +24,8 @@ button[] =
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK ColorBkgDlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK ColorTextDlgProc(HWND, UINT, WPARAM, LPARAM);
 void FillListBox(HWND hwndList);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -101,6 +103,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	RECT rect;
 	int i;
 	static char helloMessage[256] = "Good joke";
+	static HWND changeBkgDialog = NULL;
+	static HWND changeTextDialog = NULL;
+	HMENU hMenu;
+	int cxClient, cyClient;
 
 
 
@@ -174,8 +180,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{ 
-		case 1:
+		case 0:
 			DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), hwnd, AboutDlgProc); 
+			break;
+		case 1:
+			changeTextDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), hwnd, ColorTextDlgProc);
+			break;
+		case 2:
+			changeBkgDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG3), hwnd, ColorBkgDlgProc);
 			break;
 
 		case ID_MENU_ABOUT:
@@ -220,7 +232,7 @@ void FillListBox(HWND hwndList)
 	TCHAR str[256];
 	for (i = 0; i < 15; ++i)
 	{
-		sprintf_s(str, "List Element #%d", i + 1);
+		sprintf_s(str, "List element #%d", i + 1);
 		SendMessage(hwndList, LB_INSERTSTRING, i, (LPARAM)str);
 	}
 }
@@ -241,4 +253,129 @@ BOOL CALLBACK AboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 		break;
 	}
 	return FALSE; 
+}
+
+BOOL CALLBACK ColorBkgDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	static int iColor[3];
+	HWND hwndParent, hCtrl;
+	int iCtrlID, iIndex;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		for (iCtrlID = 10; iCtrlID < 13; iCtrlID++)
+		{
+			hCtrl = GetDlgItem(hDlg, iCtrlID);
+			SetScrollRange(hCtrl, SB_CTL, 0, 255, FALSE);
+			SetScrollPos(hCtrl, SB_CTL, 0, FALSE);
+		}
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
+		break;
+	case WM_HSCROLL:
+		hCtrl = (HWND)lParam;
+		iCtrlID = GetWindowLong(hCtrl, GWL_ID);
+		iIndex = iCtrlID - 10;
+		hwndParent = GetParent(hDlg);
+		switch (LOWORD(wParam))
+		{
+		case SB_PAGEDOWN:
+			iColor[iIndex] += 15; // fall through
+		case SB_LINEDOWN:
+			iColor[iIndex] = min(255, iColor[iIndex] + 1);
+			break;
+		case SB_PAGEUP:
+			iColor[iIndex] -= 15; // fall through
+		case SB_LINEUP:
+			iColor[iIndex] = max(0, iColor[iIndex] - 1);
+			break;
+		case SB_TOP:
+			iColor[iIndex] = 0;
+			break;
+		case SB_BOTTOM:
+			iColor[iIndex] = 255;
+			break;
+		case SB_THUMBPOSITION:
+		case SB_THUMBTRACK:
+			iColor[iIndex] = HIWORD(wParam);
+			break;
+		default:
+			return FALSE;
+		}
+		SetScrollPos(hCtrl, SB_CTL, iColor[iIndex], TRUE);
+		SetDlgItemInt(hDlg, iCtrlID + 3, iColor[iIndex], FALSE);
+		DeleteObject((HGDIOBJ)SetClassLong(hwndParent, GCL_HBRBACKGROUND,
+			(LONG)CreateSolidBrush(RGB(iColor[0], iColor[1], iColor[2]))));
+		InvalidateRect(hwndParent, NULL, TRUE);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+
+BOOL CALLBACK ColorTextDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	static int iColor[3];
+	HWND hwndParent, hCtrl;
+	int iCtrlID, iIndex;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		for (iCtrlID = 10; iCtrlID < 13; iCtrlID++)
+		{
+			hCtrl = GetDlgItem(hDlg, iCtrlID);
+			SetScrollRange(hCtrl, SB_CTL, 0, 255, FALSE);
+			SetScrollPos(hCtrl, SB_CTL, 0, FALSE);
+		}
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
+		break;
+	case WM_HSCROLL:
+		hCtrl = (HWND)lParam;
+		iCtrlID = GetWindowLong(hCtrl, GWL_ID);
+		iIndex = iCtrlID - 10;
+		hwndParent = GetParent(hDlg);
+		switch (LOWORD(wParam))
+		{
+		case SB_PAGEDOWN:
+			iColor[iIndex] += 15; // fall through
+		case SB_LINEDOWN:
+			iColor[iIndex] = min(255, iColor[iIndex] + 1);
+			break;
+		case SB_PAGEUP:
+			iColor[iIndex] -= 15; // fall through
+		case SB_LINEUP:
+			iColor[iIndex] = max(0, iColor[iIndex] - 1);
+			break;
+		case SB_TOP:
+			iColor[iIndex] = 0;
+			break;
+		case SB_BOTTOM:
+			iColor[iIndex] = 255;
+			break;
+		case SB_THUMBPOSITION:
+		case SB_THUMBTRACK:
+			iColor[iIndex] = HIWORD(wParam);
+			break;
+		default:
+			return FALSE;
+		}
+		SetScrollPos(hCtrl, SB_CTL, iColor[iIndex], TRUE);
+		SetDlgItemInt(hDlg, iCtrlID + 3, iColor[iIndex], FALSE);
+		InvalidateRect(hwndParent, NULL, TRUE);
+		return TRUE;
+	}
+	return FALSE;
 }
