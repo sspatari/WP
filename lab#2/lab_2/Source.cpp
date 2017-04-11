@@ -99,15 +99,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static HWND hwndButton[3];
 	static HINSTANCE hInstance;
 	static HWND hwndList, hwndText;
+	HWND hwndColorScroll;
+	static HDC hdc;
+	PAINTSTRUCT ps;
 	static int cxChar, cyChar;
 	RECT rect;
 	int i;
-	static char helloMessage[256] = "Good joke";
+	static char helloMessage[256] = "Your Text";
 	static HWND changeBkgDialog = NULL;
 	static HWND changeTextDialog = NULL;
 	HMENU hMenu;
 	int cxClient, cyClient;
-
+	static int color[3] = { 0, 0, 0 };
+	static HBRUSH hbr = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 
 
 	switch (message)
@@ -152,6 +156,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 	
 	case WM_SIZE:
+		cxClient = LOWORD(lParam);          
+		cyClient = HIWORD(lParam);
 		GetClientRect(hwnd, &rect);
 		MoveWindow(hwndList,
 			(rect.right - 20 * cxChar) / 2,
@@ -176,7 +182,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				TRUE);
 		}
 		return 0;
+	case WM_PAINT:
+		if (changeTextDialog != NULL)
+		{
+			for (i = 10; i < 13; i++)
+			{
+				hwndColorScroll = GetDlgItem(changeTextDialog, i);
+				color[i - 10] = GetScrollPos(hwndColorScroll, SB_CTL);
+			}
+		}
+		hdc = BeginPaint(hwnd, &ps);
+		SetTextColor(hdc, RGB(color[0], color[1], color[2]));
+		SetTextColor(GetDC(hwndText), RGB(color[0], color[1], color[2]));
+		SetWindowText(hwndText, helloMessage);
+		EndPaint(hwnd, &ps);
+		return 0;
 
+	case WM_CTLCOLORSTATIC:
+	{
+		SetBkMode((HDC)wParam, TRANSPARENT);
+		SetTextColor((HDC)wParam, RGB(color[0], color[1], color[2])
+		);
+		return (LRESULT)hbr;
+	}
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{ 
