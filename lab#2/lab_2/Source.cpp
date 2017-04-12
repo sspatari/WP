@@ -16,14 +16,14 @@ struct
 }
 button[] =
 {
-	BS_DEFPUSHBUTTON, TEXT("Press Me!"),
+	BS_DEFPUSHBUTTON, TEXT("Press to enter Name"),
 	BS_DEFPUSHBUTTON, TEXT("Change font color"),
 	BS_DEFPUSHBUTTON, TEXT("Change background color"),
 };
 
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK EnterNameDlgProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK ColorBkgDlgProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK ColorTextDlgProc(HWND, UINT, WPARAM, LPARAM);
 void FillListBox(HWND hwndList);
@@ -99,20 +99,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static HWND hwndButton[3];
 	static HINSTANCE hInstance;
 	static HWND hwndList, hwndText;
-	HWND hwndColorScroll;
+	static HWND hwndColorScroll = NULL, 
+		hwndEnterTextDialog = NULL, 
+		hwndColorTextDialog = NULL, 
+		hwndColorBkgDialog = NULL, 
+		hwndEditText = NULL;
 	static HDC hdc;
 	PAINTSTRUCT ps;
 	static int cxChar, cyChar;
 	RECT rect;
 	int i;
 	static char helloMessage[256] = "Your Text";
-	static HWND changeBkgDialog = NULL;
-	static HWND changeTextDialog = NULL;
 	HMENU hMenu;
 	int cxClient, cyClient;
 	static int color[3] = { 0, 0, 0 };
 	static HBRUSH hbr = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-
+	static char str[100];
 
 	switch (message)
 	{
@@ -183,22 +185,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		return 0;
 	case WM_PAINT:
-		if (changeTextDialog != NULL)
+		if (hwndColorTextDialog != NULL)
 		{
 			for (i = 10; i < 13; i++)
 			{
-				hwndColorScroll = GetDlgItem(changeTextDialog, i);
+				hwndColorScroll = GetDlgItem(hwndColorTextDialog, i);
 				color[i - 10] = GetScrollPos(hwndColorScroll, SB_CTL);
 			}
 		}
 		hdc = BeginPaint(hwnd, &ps);
 		SetTextColor(hdc, RGB(color[0], color[1], color[2]));
-		SetTextColor(GetDC(hwndText), RGB(color[0], color[1], color[2]));
 		SetWindowText(hwndText, helloMessage);
 		EndPaint(hwnd, &ps);
 		return 0;
 
-	case WM_CTLCOLORSTATIC:
+	case WM_CTLCOLORSTATIC: //needed in order to change color text of the our helloMessage text
 	{
 		SetBkMode((HDC)wParam, TRANSPARENT);
 		SetTextColor((HDC)wParam, RGB(color[0], color[1], color[2])
@@ -206,26 +207,65 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return (LRESULT)hbr;
 	}
 	case WM_COMMAND:
+		GetClientRect(hwnd, &rect);
+		cxClient = LOWORD(lParam);
+		cyClient = HIWORD(lParam);
 		switch (LOWORD(wParam))
 		{ 
 		case 0:
-			DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), hwnd, AboutDlgProc); 
+			hwndEnterTextDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), hwnd, EnterNameDlgProc); 
 			break;
+
 		case 1:
-			changeTextDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), hwnd, ColorTextDlgProc);
+			hwndColorTextDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), hwnd, ColorTextDlgProc);
 			break;
+
 		case 2:
-			changeBkgDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG3), hwnd, ColorBkgDlgProc);
+			hwndColorBkgDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG3), hwnd, ColorBkgDlgProc);
+			break;
+			
+		case 3:
+			strcpy_s(helloMessage, "Hi, ");
+			hwndEditText = GetDlgItem(hwndEnterTextDialog, IDC_EDIT1);
+			GetWindowText(hwndEditText, str, 30);
+			OutputDebugString(str);
+			strcat_s(str, " died in attempt of learning WIN API");
+			strcpy_s(helloMessage, str);
+			EndDialog(hwndEnterTextDialog, 0);
+			MoveWindow(hwndText,
+				(rect.right - strlen(helloMessage) * cxChar) / 2,
+				rect.bottom / 2 - cyChar * 15,
+				strlen(helloMessage) * cxChar,
+				cyChar,
+				TRUE);
+			SetWindowText(hwndText, helloMessage);
+			break;
+
+		case ID_LIST:
+			i = SendMessage(hwndList, LB_GETCURSEL, 0, 0);
+			SendMessage(hwndList, LB_GETTEXT, i,(LPARAM)str);
+			strcpy_s(helloMessage, sizeof(helloMessage), "You selected ");
+			strcat_s(helloMessage, str);
+			OutputDebugString(helloMessage);
+			MoveWindow(hwndText,
+				(rect.right - strlen(helloMessage) * cxChar) / 2,
+				rect.bottom / 2 - cyChar * 15,
+				strlen(helloMessage) * cxChar,
+				cyChar,
+				TRUE);
+			SetWindowText(hwndText, helloMessage);
 			break;
 
 		case ID_MENU_ABOUT:
 			MessageBox(hwnd, TEXT("About Menu\n")
 				TEXT("\nFeel the pain"), TEXT("LAB2"), MB_OK | MB_ICONINFORMATION);
 			break;
+
 		case ID_MENU_HELP:
 			MessageBox(hwnd, TEXT("Help Menu\n")
 				TEXT("\nHelp cannot be provided :D"), TEXT("LAB2"), MB_OK | MB_ICONEXCLAMATION);
 			break;
+
 		case ID_MENU_DELETEMENU:
 			SetMenu(hwnd, NULL);
 			break;
@@ -247,6 +287,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return 0;
 		}      
 		break; //break needed in order to pass the obtained default case to DefWindowProc
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
@@ -265,7 +306,7 @@ void FillListBox(HWND hwndList)
 	}
 }
 
-BOOL CALLBACK AboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK EnterNameDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 { 
 	switch (message) 
 	{ case WM_INITDIALOG: 
@@ -274,6 +315,7 @@ BOOL CALLBACK AboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 		switch (LOWORD(wParam)) 
 		{
 		case IDOK:
+			SendMessage(GetParent(hDlg), WM_COMMAND, 3, lParam);
 		case IDCANCEL: 
 			EndDialog(hDlg, 0); 
 			return TRUE; 
