@@ -109,13 +109,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static int cxChar, cyChar;
 	RECT rect;
 	int i;
-	static char helloMessage[256] = "Your Text";
-	HMENU hMenu;
-	int cxClient, cyClient;
+	static char helloMessage[256] = "Your Text Here";
 	static int color[3] = { 0, 0, 0 };
 	static HBRUSH hbr = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	static char str[100];
-
 	switch (message)
 	{
 	case WM_CREATE:
@@ -158,8 +155,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 	
 	case WM_SIZE:
-		cxClient = LOWORD(lParam);          
-		cyClient = HIWORD(lParam);
 		GetClientRect(hwnd, &rect);
 		MoveWindow(hwndList,
 			(rect.right - 20 * cxChar) / 2,
@@ -207,9 +202,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return (LRESULT)hbr;
 	}
 	case WM_COMMAND:
-		GetClientRect(hwnd, &rect);
-		cxClient = LOWORD(lParam);
-		cyClient = HIWORD(lParam);
 		switch (LOWORD(wParam))
 		{ 
 		case 0:
@@ -225,6 +217,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			
 		case 3:
+			GetClientRect(hwnd, &rect);
 			strcpy_s(helloMessage, "Hi, ");
 			hwndEditText = GetDlgItem(hwndEnterTextDialog, IDC_EDIT1);
 			GetWindowText(hwndEditText, str, 30);
@@ -242,6 +235,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case ID_LIST:
+			GetClientRect(hwnd, &rect);
 			i = SendMessage(hwndList, LB_GETCURSEL, 0, 0);
 			SendMessage(hwndList, LB_GETTEXT, i,(LPARAM)str);
 			strcpy_s(helloMessage, sizeof(helloMessage), "You selected ");
@@ -256,6 +250,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetWindowText(hwndText, helloMessage);
 			break;
 
+		case ID_ACCELERATOR40004:
+			GetWindowRect(hwnd, &rect);
+			rect.left += 20;
+			rect.right -= 20;
+			MoveWindow(hwnd, rect.left, rect.top, rect.right - rect.left,
+				rect.bottom - rect.top, TRUE);
+			break;
+
+		case ID_ACCELERATOR40005:
+			GetWindowRect(hwnd, &rect);
+			rect.left -= 20;
+			rect.right += 20;
+			MoveWindow(hwnd, rect.left, rect.top, rect.right - rect.left,
+				rect.bottom - rect.top, TRUE);
+			break;
 		case ID_MENU_ABOUT:
 			MessageBox(hwnd, TEXT("About Menu\n")
 				TEXT("\nFeel the pain"), TEXT("LAB2"), MB_OK | MB_ICONINFORMATION);
