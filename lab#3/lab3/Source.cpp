@@ -159,6 +159,101 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		BitBlt(hdc, 0.75 * cxClient, 0.5 * cyClient, 0.70 * cxClient, 0.5 * cyClient, memoryHDC, 0, 0, SRCCOPY);
 		EndPaint(hwnd, &ps);
 		return 0;
+	case WM_LBUTTONDOWN:
+		circleCenter.x = LOWORD(lParam);
+		circleCenter.y = HIWORD(lParam);
+		return 0;
+	case WM_RBUTTONDOWN:
+		squareCenter.x = LOWORD(lParam);
+		squareCenter.y = HIWORD(lParam);
+		return 0;
+	case WM_MOUSEMOVE:
+		GetClientRect(hwnd, &rect);
+		if (wParam & MK_LBUTTON || wParam & MK_RBUTTON)
+		{
+			hdc = GetDC(hwnd);
+			
+			if (drawBezier) // changed using ctrl+Tab will manipulate bezier line
+			{
+				SelectObject(hdc, GetStockObject(WHITE_PEN));
+				PolyBezier(hdc, bezier1, 4);
+				if (wParam & MK_LBUTTON)
+				{
+					bezier1[1].x = LOWORD(lParam);
+					bezier1[1].y = HIWORD(lParam);
+				}
+				if (wParam & MK_RBUTTON)
+				{
+					bezier1[2].x = LOWORD(lParam);
+					bezier1[2].y = HIWORD(lParam);
+				}
+				SelectObject(hdc, GetStockObject(BLACK_PEN));
+				PolyBezier(hdc, bezier1, 4);
+			}
+			else
+			{
+				if (erase && (wParam & MK_LBUTTON)) // when erase is toggled and left button cliked 
+				{
+					SelectObject(hdc, GetStockObject(WHITE_BRUSH));
+					SelectObject(hdc, GetStockObject(NULL_PEN));
+					circleRect.left = circleCenter.x - 20;
+					circleRect.right = circleCenter.x + 20;
+					circleRect.bottom = circleCenter.y + 20;
+					circleRect.top = circleCenter.y - 20;
+					Rectangle(hdc, circleRect.left, circleRect.top, circleRect.right, circleRect.bottom);
+					circleCenter.x = LOWORD(lParam);
+					circleCenter.y = HIWORD(lParam);
+				}
+				else
+				{
+					if (wParam & MK_LBUTTON) // resize circle 
+					{
+						SelectObject(hdc, GetStockObject(NULL_BRUSH));
+						SelectObject(hdc, circlePen);
+					
+						RedrawWindow(hwnd, &circleRect, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
+						if (LOWORD(lParam) < HIWORD(lParam))
+						{
+							circleRect.left = circleCenter.x - (HIWORD(lParam) - circleCenter.y);
+							circleRect.right = circleCenter.x + (HIWORD(lParam) - circleCenter.y);
+							circleRect.bottom = HIWORD(lParam);
+							circleRect.top = 2 * circleCenter.y - HIWORD(lParam);
+						}
+						else
+						{
+							circleRect.left = 2 * circleCenter.x - LOWORD(lParam);
+							circleRect.right = LOWORD(lParam);
+							circleRect.bottom = circleCenter.y + (LOWORD(lParam) - circleCenter.x);
+							circleRect.top = circleCenter.y - (LOWORD(lParam) - circleCenter.x);
+						}
+						Ellipse(hdc, circleRect.left, circleRect.top, circleRect.right, circleRect.bottom);
+					}
+					if (wParam & MK_RBUTTON) //will redraw the squarewith the specified randomed brush
+					{
+						SelectObject(hdc, squareBrush);
+						SelectObject(hdc, GetStockObject(BLACK_PEN));
+						RedrawWindow(hwnd, &square, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
+						if (LOWORD(lParam) < HIWORD(lParam))
+						{
+							square.left = squareCenter.x - (HIWORD(lParam) - squareCenter.y);
+							square.right = squareCenter.x + (HIWORD(lParam) - squareCenter.y);
+							square.bottom = HIWORD(lParam);
+							square.top = 2 * squareCenter.y - HIWORD(lParam);
+						}
+						else
+						{
+							square.left = 2 * squareCenter.x - LOWORD(lParam);
+							square.right = LOWORD(lParam);
+							square.bottom = squareCenter.y + (LOWORD(lParam) - squareCenter.x);
+							square.top = squareCenter.y - (LOWORD(lParam) - squareCenter.x);
+						}
+						Rectangle(hdc, square.left, square.top, square.right, square.bottom);
+					}
+				}
+			}
+			ReleaseDC(hwnd, hdc);
+		}
+		return 0;
 	case WM_COMMAND:
 		GetClientRect(hwnd, &rect);
 		switch (LOWORD(wParam))
