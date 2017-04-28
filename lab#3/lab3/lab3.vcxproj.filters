@@ -30,10 +30,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="bitmap1.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="yoda.bmp">
+    <Image Include="president.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

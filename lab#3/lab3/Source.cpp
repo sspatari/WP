@@ -1,7 +1,8 @@
 #include <windows.h>
 #include <time.h>
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
+HBRUSH CreateGradientBrush(COLORREF top, COLORREF bottom, HDC hdc, RECT rc);
+HPEN *CreatePens(HWND hwnd, int delta);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR szCmdLine, int iCmdShow)
 {
@@ -63,7 +64,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static HBITMAP bitmapMem;
 	static HINSTANCE hInstance;
 	BITMAP bitmap;
-	static TCHAR quote[] = TEXT("Do. Or do not. There is no try.");
+	static TCHAR quote[] = TEXT("Do. Or do not. There is no try. \"Yoda\"");
 	SIZE  lp_Size;
 	static HBRUSH selectbrush = NULL;
 	static HPEN circlePen;
@@ -89,22 +90,125 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
 		hdc = GetDC(hwnd);
 		memoryHDC = CreateCompatibleDC(hdc);
-		bitmapMem = LoadBitmap(hInstance, MAKEINTRESOURCE(103));
+		bitmapMem = LoadBitmap(hInstance, MAKEINTRESOURCE(105));
 		SelectObject(memoryHDC, bitmapMem);
 		GetObject(bitmapMem, sizeof(bitmap), &bitmap);
 		GetTextExtentPoint32(memoryHDC, quote, strlen(quote), &lp_Size);
 		SetTextColor(memoryHDC, RGB(255, 255, 255));
 		SetBkColor(memoryHDC, RGB(0, 0, 0));
-		TextOut(memoryHDC, (bitmap.bmWidth - lp_Size.cx) / 2, (bitmap.bmHeight - lp_Size.cy) / 2, quote, strlen(quote));
+		TextOut(memoryHDC, (bitmap.bmWidth - lp_Size.cx) / 2, (bitmap.bmHeight - lp_Size.cy), quote, strlen(quote));
 		SetScrollRange(hwnd, SB_VERT, 0, 10, TRUE);
 		SetScrollPos(hwnd, SB_VERT, 0, TRUE);
 		ReleaseDC(hwnd, hdc);
 		circlePen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
 		squareBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
 		return 0;
+	case WM_SIZE:
+		cxClient = LOWORD(lParam);
+		cyClient = HIWORD(lParam);
+		// Two bezier coodinatesBezier coordinates
+		bezier1[0].x = cxClient / 3;			bezier2[0].x = cxClient / 3;
+		bezier1[0].y = cyClient / 5;			bezier2[0].y = 3 * cyClient / 4;
+		bezier1[1].x = 2.5 * cxClient / 4;		bezier2[1].x = cxClient / 4;
+		bezier1[1].y = cyClient / 4;			bezier2[1].y = cyClient / 3;
+		bezier1[2].x = 2 * cxClient / 5;		bezier2[2].x = cxClient / 4;
+		bezier1[2].y = 3 * cyClient / 4;		bezier2[2].y = 5 * cyClient / 4;
+		bezier1[3].x = 3 * cxClient / 4;		bezier2[3].x = 2 * cxClient / 10;
+		bezier1[3].y = 4 * cyClient / 5;		bezier2[3].y = 3 * cyClient / 4;
+
+		//Triangle coordinates
+		polygon[0].x = 0.75 * cxClient;			polygon[0].y = 0.25 * cyClient;
+		polygon[1].x = 0.70 * cxClient;			polygon[1].y = 0.25  * cyClient + 0.1 * cxClient;
+		polygon[2].x = 0.80 * cxClient;			polygon[2].y = 0.25  * cyClient + 0.1 * cxClient;
+		return 0;
+	case WM_PAINT:
+		GetClientRect(hwnd, &rect);
+		hdc = BeginPaint(hwnd, &ps);
+		
+		//the bezier lines
+		PolyBezier(hdc, bezier1, 4); 
+		PolyBezier(hdc, bezier2, 4);
+		
+		//the circle
+		Ellipse(hdc, 0.02 * cxClient, 0.25 * cyClient, 0.12 * cxClient, 0.25  * cyClient + 0.1 * cxClient);
+		SelectObject(hdc, pens[2]);
+		
+		//the rectangle
+		Rectangle(hdc, 0.85 * cxClient, 0.25 * cyClient, 0.95 * cxClient, 0.25  * cyClient + 0.1 * cxClient);
+		SelectObject(hdc, pens[0]);
+		selectbrush = CreateGradientBrush(RGB(80, 20, 0), RGB(15, 110, 100), hdc, rect);
+		SelectObject(hdc, selectbrush);
+		
+		//the pie
+		Pie(hdc, 0.02 * cxClient, 0.5 * cyClient, 0.12 * cxClient, 0.5  * cyClient + 0.1 * cxClient, 0.07 * cxClient, 0.55 * cyClient, 0.035 * cxClient, 0.5  * cyClient + 0.07 * cxClient);
+		SelectObject(hdc, GetStockObject(BLACK_PEN));
+		selectbrush = CreateGradientBrush(RGB(200, 100, 0), RGB(115, 180, 100), hdc, rect);
+		SelectObject(hdc, selectbrush);
+		
+		//the triangle
+		Polygon(hdc, polygon, 3);
+	
+		//the lines
+		for (i = 0; i < 5; i++)
+		{
+			SelectObject(hdc, pens[i]);
+			MoveToEx(hdc, 0 - delta, (i * (25 + (delta / 5))) - delta, NULL);
+			LineTo(hdc, cxClient + delta, (i * (25 + (delta / 5))) - delta);
+		}
+		
+		//the bitmap
+		BitBlt(hdc, 0.75 * cxClient, 0.5 * cyClient, 0.70 * cxClient, 0.5 * cyClient, memoryHDC, 0, 0, SRCCOPY);
+		EndPaint(hwnd, &ps);
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+HPEN *CreatePens(HWND hwnd, int delta)
+{
+	static HPEN pens[5];
+	int i;
+
+	srand(time(NULL));
+	for (i = 0; i < 5; i++)
+	{
+		pens[i] = CreatePen(PS_SOLID, (i + 1) * 5 + (delta / 5), RGB(rand() % 256, rand() % 256, rand() % 256));
+	}
+
+	return pens;
+}
+
+HBRUSH CreateGradientBrush(COLORREF top, COLORREF bottom, HDC hdc, RECT rc)
+{
+	HBRUSH Brush = NULL;
+	HDC hdcmem = CreateCompatibleDC(hdc);
+	HBITMAP hbitmap = CreateCompatibleBitmap(hdc, rc.right - rc.left, rc.bottom - rc.top);
+	SelectObject(hdcmem, hbitmap);
+
+	int r1 = GetRValue(top), r2 = GetRValue(bottom), g1 = GetGValue(top), g2 = GetGValue(bottom), b1 = GetBValue(top), b2 = GetBValue(bottom);
+	for (int i = 0; i < rc.bottom - rc.top; i++)
+	{
+		RECT temp;
+		int r, g, b;
+		r = int(r1 + double(i * (r2 - r1) / rc.bottom - rc.top));
+		g = int(g1 + double(i * (g2 - g1) / rc.bottom - rc.top));
+		b = int(b1 + double(i * (b2 - b1) / rc.bottom - rc.top));
+		Brush = CreateSolidBrush(RGB(r, g, b));
+		temp.left = 0;
+		temp.top = i;
+		temp.right = rc.right - rc.left;
+		temp.bottom = i + 1;
+		FillRect(hdcmem, &temp, Brush);
+		DeleteObject(Brush);
+	}
+	HBRUSH pattern = CreatePatternBrush(hbitmap);
+
+	DeleteDC(hdcmem);
+	DeleteObject(Brush);
+	DeleteObject(hbitmap);
+
+	return pattern;
 }
