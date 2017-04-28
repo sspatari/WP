@@ -2,7 +2,6 @@
 #include <time.h>
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 HBRUSH CreateGradientBrush(COLORREF top, COLORREF bottom, HDC hdc, RECT rc);
-HPEN *CreatePens(HWND hwnd, int delta);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR szCmdLine, int iCmdShow)
 {
@@ -160,25 +159,81 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		BitBlt(hdc, 0.75 * cxClient, 0.5 * cyClient, 0.70 * cxClient, 0.5 * cyClient, memoryHDC, 0, 0, SRCCOPY);
 		EndPaint(hwnd, &ps);
 		return 0;
+	case WM_COMMAND:
+		GetClientRect(hwnd, &rect);
+		switch (LOWORD(wParam))
+		{
+		case 40001: //change color of the circle drawn with mouse
+			if (!changeCirclePen)
+			{
+				circlePen = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
+				changeCirclePen = 1;
+			}
+			else
+			{
+				circlePen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+				changeCirclePen = 0;
+			}
+			break;
+		case 40002: //change color  of square brush when using rigth button to draw it
+			hdc = GetDC(hwnd);
+			GetClientRect(hwnd, &rect);
+			if (!changeSquareBrush)
+			{
+				squareBrush = CreateGradientBrush(RGB(rand() % 256, rand() % 256, rand() % 256), RGB(rand() % 256, rand() % 256, rand() % 256), hdc, rect);
+				changeSquareBrush = 1;
+			}
+			else
+			{
+				squareBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+				changeSquareBrush = 0;
+			}
+			break;
+		case 40003: //move bezier line
+			if (!drawBezier)
+			{
+				drawBezier = 1;
+			}
+			else
+			{
+				drawBezier = 0;
+			}
+			break;
+		case 40004: //increase the pen in size
+			delta += 15;
+			for (i = 0; i < 5; i++)
+			{
+				GetObject(pens[i], sizeof(LOGPEN), (LPVOID)&logpen);
+				pens[i] = CreatePen(PS_SOLID, (i + 1) * 5 + (delta / 5), logpen.lopnColor);
+			}
+			InvalidateRect(hwnd, &rect, TRUE);
+			break;
+		case 40005://reduce the pen in size
+			delta -= 15;
+			for (i = 0; i < 5; i++)
+			{
+				GetObject(pens[i], sizeof(LOGPEN), (LPVOID)&logpen);
+				pens[i] = CreatePen(PS_SOLID, (i + 1) * 5 + (delta / 5), logpen.lopnColor);
+			}
+			InvalidateRect(hwnd, &rect, TRUE);
+			break;
+		case 40007: //used to erase
+			if (!erase)
+			{
+				erase = 1;
+			}
+			else
+			{
+				erase = 0;
+			}
+			break;
+		}
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
-}
-
-HPEN *CreatePens(HWND hwnd, int delta)
-{
-	static HPEN pens[5];
-	int i;
-
-	srand(time(NULL));
-	for (i = 0; i < 5; i++)
-	{
-		pens[i] = CreatePen(PS_SOLID, (i + 1) * 5 + (delta / 5), RGB(rand() % 256, rand() % 256, rand() % 256));
-	}
-
-	return pens;
 }
 
 HBRUSH CreateGradientBrush(COLORREF top, COLORREF bottom, HDC hdc, RECT rc)
