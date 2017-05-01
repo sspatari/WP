@@ -17,20 +17,20 @@ private:
 public:
 	Figure(int radius, int x, int y);
 	~Figure();
-	int getType();
-	int getX();
-	int getY();
 	void setPosition(int x, int y);
 	void setSquare();
 	void setCircle();
 	void setRandomColor();
 	void setRandomVelocity();
 	void setRandomRadius();
+	int getType();
+	int getX();
+	int getY();
 	void paint(HDC hdc);
 	void update();
 	bool collides(Figure figure);
-	bool collidesVerticalLine(int x);
-	bool collidesHorizontalLine(int y);
+	bool collidesVerticalBorder(int x);
+	bool collidesHorizontalBorder(int y);
 	void invertVelocityX();
 	void invertVelocityY();
 	void increaseVelocity();
