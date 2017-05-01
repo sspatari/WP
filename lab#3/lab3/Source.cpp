@@ -5,7 +5,7 @@ HBRUSH CreateGradientBrush(COLORREF top, COLORREF bottom, HDC hdc, RECT rc);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR szCmdLine, int iCmdShow)
 {
-	static TCHAR szAppName[] = TEXT("SineWave");
+	static TCHAR szAppName[] = TEXT("Lab3");
 	HWND hwnd;
 	HACCEL hAccel;
 	MSG msg;
