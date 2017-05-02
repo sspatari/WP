@@ -18,9 +18,12 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-void createCircle(HWND hwnd, int x = -1, int y = -1);
+void createCircle(HWND, int x = -1, int y = -1);
 int checkFigureCollide(Figure *);
-void onPaint(HDC hdc);
+void onPaint(HDC);
+void createRandomFigure(HWND, int x = -1, int y = -1);
+void update(HWND);
+void collideWindowRect(Figure *, HWND);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -150,6 +153,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
+	case WM_TIMER:
+		switch (wParam)
+		{
+		case TIMER_UPDATE:
+			update(hWnd);
+			break;
+		}
+		break;
+
 	case WM_PAINT:
 	{
 		GetClientRect(hWnd, &rect);
@@ -161,8 +173,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Create an off-screen DC for double-buffering
 		hdcMem = CreateCompatibleDC(hdc);
 		hbmMem = CreateCompatibleBitmap(hdc, width, height);
-
 		hOld = SelectObject(hdcMem, hbmMem);
+
+		// Fills the Bkg with white color
+		FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+
 		onPaint(hdcMem);
 
 		// Transfer the off-screen DC to the screen
@@ -274,10 +289,76 @@ int checkFigureCollide(Figure *figure)
 	return count;
 }
 
+//paint all figures in the device context
 void onPaint(HDC hdc)
 {
 	for (vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
 		Figure figure = *it;
 		figure.paint(hdc);
+	}
+}
+
+//creates circle or square
+void createRandomFigure(HWND hWnd, int x, int y)
+{
+	RECT rect;
+	GetWindowRect(hWnd, &rect);
+	Figure figure(15 + rand() % 10, 50 + rand() % (rect.right - rect.left - 100), 50 + rand() % (rect.bottom - rect.top - 100));
+	figure.setRandomColor();
+	figure.setRandomVelocity();
+	figure.setRandomRadius();
+	if (rand() % 2 == 0)
+		figure.setCircle();
+	else
+		figure.setSquare();
+
+	if (x != -1 && y != -1)
+	{
+		figure.setPosition(x, y);
+	}
+	else
+	{
+		while (checkFigureCollide(&figure))
+		{
+			figure.setPosition(50 + rand() % (rect.right - rect.left - 100), 50 + rand() % (rect.bottom - rect.top - 100));
+		}
+	}
+	figures.push_back(figure);
+}
+
+//update the hall client rect
+void update(HWND hWnd)
+{
+
+	RECT rect;
+	GetClientRect(hWnd, &rect);
+
+	int count = 0;
+
+	for (std::vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
+		Figure *figure = &(*it);
+		figure->updatePosition();
+		collideWindowRect(figure, hWnd);
+		count += checkFigureCollide(figure);
+	}
+	for (int i = 0; i < count; i++)
+	{
+		if (figures.size() < 10)
+			createRandomFigure(hWnd);
+	}
+	InvalidateRect(hWnd, &rect, false);
+}
+
+void collideWindowRect(Figure *figure, HWND hWnd)
+{
+	RECT rect;
+	GetClientRect(hWnd, &rect);
+	if (figure->collidesHorizontalBorder(0) || figure->collidesHorizontalBorder(rect.bottom - rect.top)) {
+		figure->invertVelocityY();
+		figure->increaseVelocity();
+	}
+	if (figure->collidesVerticalBorder(0) || figure->collidesVerticalBorder(rect.right - rect.left)) {
+		figure->invertVelocityX();
+		figure->flipFigure();
 	}
 }
