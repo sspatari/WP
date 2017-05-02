@@ -24,6 +24,7 @@ void onPaint(HDC);
 void createRandomFigure(HWND, int x = -1, int y = -1);
 void update(HWND);
 void collideWindowRect(Figure *, HWND);
+void changeSpeed(bool);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -162,6 +163,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
+	case WM_MOUSEWHEEL: {
+		int zDelta = (short)HIWORD(wParam);
+		if (zDelta > 0)
+			changeSpeed(true);
+		else
+			changeSpeed(false);
+		break;
+	}
+
 	case WM_PAINT:
 	{
 		GetClientRect(hWnd, &rect);
@@ -191,6 +201,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		return 0;
 	}
+
+	case WM_LBUTTONDOWN: 
+		createRandomFigure(hWnd, LOWORD(lParam), HIWORD(lParam));
+		break;
 
     case WM_COMMAND:
         {
@@ -335,7 +349,7 @@ void update(HWND hWnd)
 
 	int count = 0;
 
-	for (std::vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
+	for (vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
 		Figure *figure = &(*it);
 		figure->updatePosition();
 		collideWindowRect(figure, hWnd);
@@ -360,5 +374,16 @@ void collideWindowRect(Figure *figure, HWND hWnd)
 	if (figure->collidesVerticalBorder(0) || figure->collidesVerticalBorder(rect.right - rect.left)) {
 		figure->invertVelocityX();
 		figure->flipFigure();
+	}
+}
+
+void changeSpeed(bool increase)
+{
+	for (vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
+		Figure *figure = &(*it);
+		if (increase)
+			figure->increaseVelocity();
+		else
+			figure->decreaseVelocity();
 	}
 }
