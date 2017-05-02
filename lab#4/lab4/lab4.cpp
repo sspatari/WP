@@ -5,17 +5,22 @@
 #include "lab4.h"
 
 #define MAX_LOADSTRING 100
+#define TIMER_UPDATE 1
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+vector<Figure> figures;							// all figures(either circles or squares)
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+void createCircle(HWND hwnd, int x = -1, int y = -1);
+int checkFigureCollide(Figure *);
+void onPaint(HDC hdc);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -123,8 +128,55 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	PAINTSTRUCT ps;
+	HDC hdc;
+	HDC hdcMem;
+	RECT rect;
+	HBITMAP hbmMem;
+	int width;
+	int height;
+	HANDLE hOld;
+
     switch (message)
     {
+	case WM_CREATE: {
+		SetTimer(hWnd,             // handle to main window 
+			TIMER_UPDATE,            // timer identifier 
+			40,                 // 25 frames per seconds
+			(TIMERPROC)NULL);
+		for (int i = 0; i < 3; i++) {
+			createCircle(hWnd);
+		}
+		break;
+	}
+
+	case WM_PAINT:
+	{
+		GetClientRect(hWnd, &rect);
+		width = rect.right - rect.left;
+		height = rect.bottom - rect.top;
+
+		hdc = BeginPaint(hWnd, &ps);
+
+		// Create an off-screen DC for double-buffering
+		hdcMem = CreateCompatibleDC(hdc);
+		hbmMem = CreateCompatibleBitmap(hdc, width, height);
+
+		hOld = SelectObject(hdcMem, hbmMem);
+		onPaint(hdcMem);
+
+		// Transfer the off-screen DC to the screen
+		BitBlt(hdc, 0, 0, width, height, hdcMem, 0, 0, SRCCOPY);
+
+		// Free-up the off-screen DC
+		SelectObject(hdcMem, hOld);
+		DeleteObject(hbmMem);
+		DeleteDC(hdcMem);
+
+		EndPaint(hWnd, &ps);
+		return 0;
+	}
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -142,14 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+ 
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -177,4 +222,62 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+void createCircle(HWND hWnd, int x, int y)
+{
+	RECT rect;
+	GetWindowRect(hWnd, &rect);
+	Figure figure(15 + rand() % 10, 50 + rand() % (rect.right - rect.left - 100), 50 + rand() % (rect.bottom - rect.top - 100));
+	figure.setRandomColor();
+	figure.setRandomVelocity();	
+	figure.setCircle();
+
+	if (x != -1 && y != -1)
+	{
+		figure.setPosition(x, y);
+	}
+	else
+	{
+		while (checkFigureCollide(&figure))
+		{
+			figure.setPosition(50 + rand() % (rect.right - rect.left - 100), 50 + rand() % (rect.bottom - rect.top - 100));
+		}
+	}
+	figures.push_back(figure);
+}
+
+int checkFigureCollide(Figure *figure)
+{
+	int count = 0;
+	for (vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
+		Figure *second = &(*it);
+		if (figure != second)
+			if (figure->collides(*second)) {
+				if (figure->getX() < second->getX()) {
+					figure->invertVelocityX();
+				}
+				if (figure->getY() < second->getY()) {
+					figure->invertVelocityY();
+				}
+				figure->updatePosition();
+
+				if (figure->getType() == second->getType())
+				{
+					figure->setRandomColor();
+					second->setRandomColor();
+					count++;
+				}
+			}
+	}
+
+	return count;
+}
+
+void onPaint(HDC hdc)
+{
+	for (vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
+		Figure figure = *it;
+		figure.paint(hdc);
+	}
 }

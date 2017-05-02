@@ -17,5 +17,9 @@
 #include <memory.h>
 #include <tchar.h>
 #include <math.h>
+#include <vector>
+#include "Figure.h"
+
+using namespace std;
 
 // TODO: reference additional headers your program requires here

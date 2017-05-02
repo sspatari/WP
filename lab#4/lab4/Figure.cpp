@@ -83,7 +83,7 @@ void Figure::paint(HDC hdc)
 	}
 }
 
-void Figure::update()
+void Figure::updatePosition()
 {
 	x += velocityX;
 	y += velocityY;

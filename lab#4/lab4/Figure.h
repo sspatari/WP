@@ -27,7 +27,7 @@ public:
 	int getX();
 	int getY();
 	void paint(HDC hdc);
-	void update();
+	void updatePosition();
 	bool collides(Figure figure);
 	bool collidesVerticalBorder(int x);
 	bool collidesHorizontalBorder(int y);
