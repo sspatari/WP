@@ -5,7 +5,7 @@
 #include "lab4.h"
 
 #define MAX_LOADSTRING 100
-#define TIMER_UPDATE 1
+#define MY_TIMER 1
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
@@ -18,10 +18,9 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-void createCircle(HWND, int x = -1, int y = -1);
 int checkFigureCollide(Figure *);
 void onPaint(HDC);
-void createRandomFigure(HWND, int x = -1, int y = -1);
+void createFigure(HWND,int type = CIRCLE, int x = -1, int y = -1);
 void update(HWND);
 void collideWindowRect(Figure *, HWND);
 void changeSpeed(bool);
@@ -139,17 +138,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	HBITMAP hbmMem;
 	int width;
 	int height;
-	HANDLE hOld;
+	HBITMAP hOld;
 
     switch (message)
     {
 	case WM_CREATE: {
-		SetTimer(hWnd,             // handle to main window 
-			TIMER_UPDATE,            // timer identifier 
-			40,                 // 25 frames per seconds
-			(TIMERPROC)NULL);
-		for (int i = 0; i < 3; i++) {
-			createCircle(hWnd);
+		SetTimer(hWnd, MY_TIMER, 25, (TIMERPROC)NULL);
+ 		for (int i = 0; i < 2; i++) {
+			createFigure(hWnd,0); //create 3 circles
 		}
 		break;
 	}
@@ -157,7 +153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 		switch (wParam)
 		{
-		case TIMER_UPDATE:
+		case MY_TIMER:
 			update(hWnd);
 			break;
 		}
@@ -183,11 +179,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Create an off-screen DC for double-buffering
 		hdcMem = CreateCompatibleDC(hdc);
 		hbmMem = CreateCompatibleBitmap(hdc, width, height);
-		hOld = SelectObject(hdcMem, hbmMem);
+		hOld = (HBITMAP)SelectObject(hdcMem, hbmMem);
 
 		// Fills the Bkg with white color
 		FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
+		// Draw into hdcMem here
 		onPaint(hdcMem);
 
 		// Transfer the off-screen DC to the screen
@@ -203,8 +200,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 
 	case WM_LBUTTONDOWN: 
-		createRandomFigure(hWnd, LOWORD(lParam), HIWORD(lParam));
-		break;
+		createFigure(hWnd, rand() % 2, LOWORD(lParam), HIWORD(lParam));
+		break; 
 
     case WM_COMMAND:
         {
@@ -253,29 +250,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-void createCircle(HWND hWnd, int x, int y)
-{
-	RECT rect;
-	GetWindowRect(hWnd, &rect);
-	Figure figure(15 + rand() % 10, 50 + rand() % (rect.right - rect.left - 100), 50 + rand() % (rect.bottom - rect.top - 100));
-	figure.setRandomColor();
-	figure.setRandomVelocity();	
-	figure.setCircle();
-
-	if (x != -1 && y != -1)
-	{
-		figure.setPosition(x, y);
-	}
-	else
-	{
-		while (checkFigureCollide(&figure))
-		{
-			figure.setPosition(50 + rand() % (rect.right - rect.left - 100), 50 + rand() % (rect.bottom - rect.top - 100));
-		}
-	}
-	figures.push_back(figure);
-}
-
 int checkFigureCollide(Figure *figure)
 {
 	int count = 0;
@@ -313,7 +287,7 @@ void onPaint(HDC hdc)
 }
 
 //creates circle or square
-void createRandomFigure(HWND hWnd, int x, int y)
+void createFigure(HWND hWnd, int type, int x, int y)
 {
 	RECT rect;
 	GetWindowRect(hWnd, &rect);
@@ -321,9 +295,9 @@ void createRandomFigure(HWND hWnd, int x, int y)
 	figure.setRandomColor();
 	figure.setRandomVelocity();
 	figure.setRandomRadius();
-	if (rand() % 2 == 0)
+	if (type == 0)
 		figure.setCircle();
-	else
+	else if(type == 1)
 		figure.setSquare();
 
 	if (x != -1 && y != -1)
@@ -358,9 +332,9 @@ void update(HWND hWnd)
 	for (int i = 0; i < count; i++)
 	{
 		if (figures.size() < 10)
-			createRandomFigure(hWnd);
+			createFigure(hWnd, rand() % 2);
 	}
-	InvalidateRect(hWnd, &rect, false);
+	InvalidateRect(hWnd, &rect, false); //the false parameter solves some of the flickering
 }
 
 void collideWindowRect(Figure *figure, HWND hWnd)

@@ -15,7 +15,7 @@ private:
 	COLORREF color;
 
 public:
-	Figure(int radius, int x, int y);
+	Figure(int x, int y, int radius);
 	~Figure();
 	void setPosition(int x, int y);
 	void setSquare();

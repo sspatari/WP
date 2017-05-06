@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Figure.h"
 
-Figure::Figure(int radius, int x, int y)
+Figure::Figure(int x, int y, int radius)
 {
 	this->x = x;
 	this->y = y;
@@ -35,8 +35,8 @@ void Figure::setRandomColor()
 
 void Figure::setRandomVelocity()
 {
-	velocityX = (rand() % 40 + 3) * ((rand() % 2) ? -1 : 1);
-	velocityY = (rand() % 40 + 3) * ((rand() % 2) ? -1 : 1);
+	velocityX = (rand() % 30 + 5) * ((rand() % 2) ? -1 : 1);
+	velocityY = (rand() % 30 + 5) * ((rand() % 2) ? -1 : 1);
 }
 
 void Figure::setRandomRadius()
@@ -72,7 +72,7 @@ void Figure::paint(HDC hdc)
 			y + radius
 		);
 	}
-	else
+	else if (type == SQUARE)
 	{
 		Rectangle(hdc,
 			x - radius,
@@ -142,14 +142,14 @@ void Figure::invertVelocityY()
 
 void Figure::increaseVelocity()
 {	//velocity will not increase more then specified amount
-	if (abs(velocityX) < 50)
+	if (abs(velocityX) < 60)
 		velocityX += (velocityX > 0) ? 2 : -2;
-	if (abs(velocityY) < 50)
+	if (abs(velocityY) < 60)
 		velocityY += (velocityY > 0) ? 2 : -2;
 }
 
 void Figure::decreaseVelocity()
-{	//velocity will never decrese to on wny of axes
+{	//velocity will never decrese to zero on any of axes, min value will be 1
 	if (abs(velocityX) > 1)
 		velocityX -= (velocityX > 0) ? 1 : -1;
 	if (abs(velocityY) > 1)
@@ -160,6 +160,7 @@ void Figure::flipFigure()
 {
 	if (type == CIRCLE)
 		type = SQUARE;
-	else
+	else if(type == SQUARE)
 		type = CIRCLE;
+	//add here if more figure will be available
 }
