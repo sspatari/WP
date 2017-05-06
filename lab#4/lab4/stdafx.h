@@ -16,6 +16,7 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+#include <time.h>
 #include <math.h>
 #include <vector>
 #include "Figure.h"

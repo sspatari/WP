@@ -35,13 +35,13 @@ void Figure::setRandomColor()
 
 void Figure::setRandomVelocity()
 {
-	velocityX = (rand() % 30 + 5) * ((rand() % 2) ? -1 : 1);
-	velocityY = (rand() % 30 + 5) * ((rand() % 2) ? -1 : 1);
+	velocityX = (rand() % 20 + 1) * ((rand() % 2) ? -1 : 1);
+	velocityY = (rand() % 20 + 1) * ((rand() % 2) ? -1 : 1);
 }
 
 void Figure::setRandomRadius()
 {
-	radius = 15 + rand() % 10;
+	radius = 10 + rand() % 10;
 }
 
 int Figure::getType()
@@ -62,10 +62,13 @@ int Figure::getY()
 void Figure::paint(HDC hdc)
 {
 	SelectObject(hdc, CreateSolidBrush(color));
-
+	// used for debuging
+	//wchar_t str[256]; 
+	//wsprintf(str, L"color: %d \n", color);
+	//OutputDebugString(str);
+	// delete if not necesarry
 	if (type == CIRCLE) {
-		Ellipse(
-			hdc,
+		Ellipse(hdc,
 			x - radius,
 			y - radius,
 			x + radius,
@@ -100,16 +103,14 @@ bool Figure::collidesVerticalBorder(int x)
 {
 	if (x == 0)
 	{
-		if (this->x < 0)
+		if (this->x <= 0)
 			return true;
 	}
 	else
 	{
-		if (this->x > x)
+		if (this->x >= x)
 			return true;
 	}
-	if (abs(this->x - x) <= radius)
-		return true;
 	return false;
 }
 
@@ -117,16 +118,14 @@ bool Figure::collidesHorizontalBorder(int y)
 {
 	if (y == 0)
 	{
-		if (this->y < 0)
+		if (this->y <= 0)
 			return true;
 	}
 	else
 	{
-		if (this->y > y)
+		if (this->y >= y)
 			return true;
 	}
-	if (abs(this->y - y) <= radius)
-		return true;
 	return false;
 }
 
@@ -143,9 +142,9 @@ void Figure::invertVelocityY()
 void Figure::increaseVelocity()
 {	//velocity will not increase more then specified amount
 	if (abs(velocityX) < 60)
-		velocityX += (velocityX > 0) ? 2 : -2;
+		velocityX += (velocityX > 0) ? 1 : -1;
 	if (abs(velocityY) < 60)
-		velocityY += (velocityY > 0) ? 2 : -2;
+		velocityY += (velocityY > 0) ? 1 : -1;
 }
 
 void Figure::decreaseVelocity()
