@@ -324,11 +324,11 @@ void update(HWND hWnd)
 		Figure *figure = &(*it);
 		figure->updatePosition();
 		collideWindowRect(figure, hWnd);
-		count += checkFigureCollide(figure);
+		count += checkFigureCollide(figure); //counts the collisions
 	}
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < count; i++) //for each collision creates a figure
 	{
-		if (figures.size() < 100) //no more then 10 elements created with collisions
+		if (figures.size() < 20) //no more then 20 elements created with collisions
 			createFigure(hWnd, rand() % 2);
 	}
 	InvalidateRect(hWnd, &rect, false); //the false arg is needed to eliminate some of the flickering
