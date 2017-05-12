@@ -160,8 +160,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_MOUSEWHEEL: {
-		int zDelta = (short)HIWORD(wParam);
-		if (zDelta > 0)
+		int WheelDelta = (short)HIWORD(wParam);
+		if (WheelDelta > 0)
 			changeSpeed(true);
 		else
 			changeSpeed(false);
@@ -271,31 +271,31 @@ void createFigure(HWND hWnd, int type, int x, int y)
 	figures.push_back(figure);
 }
 
-int checkFigureCollide(Figure *figure)
+int checkFigureCollide(Figure *figure) //checks if collides with another figure
 {
 	int count = 0;
 	for (vector<Figure>::iterator it = figures.begin(); it != figures.end(); ++it) {
 		Figure *second = &(*it);
 		if (figure != second)
 			if (figure->collides(*second)) {
-				if (figure->getX() < second->getX()) {
+				if (figure->getX() < second->getX()) { //if yes then changes x direction
 					figure->invertVelocityX();
 				}
-				if (figure->getY() < second->getY()) {
+				if (figure->getY() < second->getY()) { //if yes then changes x direction
 					figure->invertVelocityY();
 				}
 				figure->updatePosition();
 
-				if (figure->getType() == second->getType())
+				if (figure->getType() == second->getType())  //if true then change color of both figures
 				{
 					figure->setRandomColor();
 					second->setRandomColor();
-					count++;
+					count++; //will count nr of collisions of objecs of same type
 				}
 			}
 	}
 
-	return count;
+	return count; 
 }
 
 //paint all figures in the device context
